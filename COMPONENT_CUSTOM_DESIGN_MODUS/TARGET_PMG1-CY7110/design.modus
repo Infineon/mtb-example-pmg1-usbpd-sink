@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Design version="12" xmlns="http://cypress.com/xsd/cydesignfile_v3">
+    <ToolInfo version="2.3.0.3747"/>
+    <Devices>
+        <Device mpn="CYPM1011-24LQXI">
+            <BlockConfig>
+                <Block location="ioss[0].port[1].pin[2]">
+                    <Alias value="CYBSP_UART_TX"/>
+                </Block>
+                <Block location="ioss[0].port[1].pin[3]">
+                    <Alias value="CYBSP_UART_RX"/>
+                </Block>
+                <Block location="ioss[0].port[2].pin[1]">
+                    <Alias value="CYBSP_USER_LED"/>
+                    <Alias value="CYBSP_LED2"/>
+                    <Personality template="m0s8pin" version="1.0">
+                        <Param id="DriveModes" value="CY_GPIO_DM_STRONG"/>
+                        <Param id="initialState" value="1"/>
+                        <Param id="vtrip" value="CY_GPIO_VTRIP_CMOS"/>
+                        <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
+                        <Param id="slewRate" value="CY_GPIO_SLEW_FAST"/>
+                        <Param id="inFlash" value="true"/>
+                    </Personality>
+                </Block>
+                <Block location="peri[0].div_16[0]">
+                    <Personality template="m0s8peripheralclock" version="1.0">
+                        <Param id="intDivider" value="480"/>
+                        <Param id="fracDivider" value="0"/>
+                        <Param id="startOnReset" value="true"/>
+                    </Personality>
+                </Block>
+                <Block location="peri[0].div_16[2]">
+                    <Personality template="m0s8peripheralclock" version="1.0">
+                        <Param id="intDivider" value="96"/>
+                        <Param id="fracDivider" value="0"/>
+                        <Param id="startOnReset" value="true"/>
+                    </Personality>
+                </Block>
+                <Block location="peri[0].div_8[0]">
+                    <Personality template="m0s8peripheralclock" version="1.0">
+                        <Param id="intDivider" value="4"/>
+                        <Param id="fracDivider" value="0"/>
+                        <Param id="startOnReset" value="true"/>
+                    </Personality>
+                </Block>
+                <Block location="peri[0].div_8[1]">
+                    <Personality template="m0s8peripheralclock" version="1.0">
+                        <Param id="intDivider" value="80"/>
+                        <Param id="fracDivider" value="0"/>
+                        <Param id="startOnReset" value="true"/>
+                    </Personality>
+                </Block>
+                <Block location="peri[0].div_8[2]">
+                    <Personality template="m0s8peripheralclock" version="1.0">
+                        <Param id="intDivider" value="48"/>
+                        <Param id="fracDivider" value="0"/>
+                        <Param id="startOnReset" value="true"/>
+                    </Personality>
+                </Block>
+                <Block location="peri[0].div_8[3]">
+                    <Personality template="m0s8peripheralclock" version="1.0">
+                        <Param id="intDivider" value="80"/>
+                        <Param id="fracDivider" value="0"/>
+                        <Param id="startOnReset" value="true"/>
+                    </Personality>
+                </Block>
+                <Block location="srss[0].clock[0]">
+                    <Personality template="m0s8sysclocks" version="1.0"/>
+                </Block>
+                <Block location="srss[0].clock[0].hfclk[0]">
+                    <Personality template="m0s8hfclk" version="1.0"/>
+                </Block>
+                <Block location="srss[0].clock[0].ilo[0]">
+                    <Personality template="m0s8ilo" version="1.0"/>
+                </Block>
+                <Block location="srss[0].clock[0].imo[0]">
+                    <Personality template="m0s8imo" version="1.0">
+                        <Param id="frequency" value="48000000"/>
+                        <Param id="trim" value="2"/>
+                    </Personality>
+                </Block>
+                <Block location="srss[0].clock[0].sysclk[0]">
+                    <Personality template="m0s8sysclk" version="1.0">
+                        <Param id="divider" value="2"/>
+                    </Personality>
+                </Block>
+                <Block location="srss[0].wdt[0]">
+                    <Personality template="m0s8wdt" version="1.0">
+                        <Param id="match" value="4096"/>
+                        <Param id="ignore" value="0"/>
+                    </Personality>
+                </Block>
+                <Block location="usbpd[0]">
+                    <Alias value="PD_PORT0"/>
+                    <Personality template="m0s8usbpd" version="1.0">
+                        <Param id="VbusOvp" value="true"/>
+                        <Param id="OvpMode" value="2"/>
+                        <Param id="OvpThresh" value="20"/>
+                        <Param id="OvpDebounce" value="10"/>
+                        <Param id="OvpRetry" value="2"/>
+                        <Param id="VbusUvp" value="true"/>
+                        <Param id="UvpMode" value="2"/>
+                        <Param id="UvpThresh" value="20"/>
+                        <Param id="UvpDebounce" value="10"/>
+                        <Param id="UvpRetry" value="2"/>
+                        <Param id="inFlash" value="false"/>
+                    </Personality>
+                </Block>
+            </BlockConfig>
+            <Netlist>
+                <Net>
+                    <Port name="peri[0].div_16[0].clk[0]"/>
+                    <Port name="usbpd[0].clock_isnk[0]"/>
+                </Net>
+                <Net>
+                    <Port name="peri[0].div_16[2].clk[0]"/>
+                    <Port name="usbpd[0].clock_filter1[0]"/>
+                </Net>
+                <Net>
+                    <Port name="peri[0].div_8[0].clk[0]"/>
+                    <Port name="usbpd[0].clock_rx[0]"/>
+                </Net>
+                <Net>
+                    <Port name="peri[0].div_8[1].clk[0]"/>
+                    <Port name="usbpd[0].clock_tx[0]"/>
+                </Net>
+                <Net>
+                    <Port name="peri[0].div_8[2].clk[0]"/>
+                    <Port name="usbpd[0].clock_sar[0]"/>
+                </Net>
+                <Net>
+                    <Port name="peri[0].div_8[3].clk[0]"/>
+                    <Port name="usbpd[0].clock_refgen[0]"/>
+                </Net>
+            </Netlist>
+        </Device>
+    </Devices>
+    <ConfiguratorData/>
+</Design>
