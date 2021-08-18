@@ -59,6 +59,13 @@ chgdet_status_t gl_chgdet_status[NO_OF_TYPEC_PORTS];
 
 static void chgdet_timer_cb(cy_timer_id_t id, void *cbContext)
 {
+    cy_stc_pdstack_context_t *stack_ctx = (cy_stc_pdstack_context_t *)cbContext;
+
+    if (stack_ctx->port != 0u)
+    {
+        id = (cy_timer_id_t)((uint8_t)id - (uint8_t)APP_TIMERS_START_ID);
+    }
+
     if (id == APP_BC_GENERIC_TIMER1)
     {
         chgdet_fsm_set_evt((cy_stc_pdstack_context_t *)cbContext, BC_EVT_TIMEOUT1);
@@ -103,7 +110,8 @@ static void chgdet_fsm_sink_primary_charger_detect(cy_stc_pdstack_context_t *sta
         case CHGDET_FSM_EVT_ENTRY:
             /* Apply terminations on D+/- and start VDP_DM_SRC_ON timer to schedule the next step. */
             Cy_USBPD_Bch_Phy_ConfigSnkTerm (stack_ctx->ptrUsbPdContext, CHGB_SINK_TERM_PCD);
-            cy_sw_timer_start(stack_ctx->ptrTimerContext, (void *)stack_ctx, APP_BC_GENERIC_TIMER1,
+            cy_sw_timer_start(stack_ctx->ptrTimerContext, (void *)stack_ctx,
+                    CY_PDSTACK_GET_APP_TIMER_ID(stack_ctx, APP_BC_GENERIC_TIMER1),
                     APP_BC_VDP_DM_SRC_ON_PERIOD, chgdet_timer_cb);
             break;
 
@@ -113,7 +121,8 @@ static void chgdet_fsm_sink_primary_charger_detect(cy_stc_pdstack_context_t *sta
                         CHGB_VREF_0_325V, CHGB_COMP_NO_INTR) == true)
             {
                 /* Start timer for source to differentiate between primary and secondary detection */
-                cy_sw_timer_start(stack_ctx->ptrTimerContext, (void *)stack_ctx, APP_BC_GENERIC_TIMER2,
+                cy_sw_timer_start(stack_ctx->ptrTimerContext, (void *)stack_ctx,
+                        CY_PDSTACK_GET_APP_TIMER_ID(stack_ctx, APP_BC_GENERIC_TIMER2),
                         APP_BC_VDMSRC_EN_DIS_PERIOD, chgdet_timer_cb);
             }
             else
@@ -163,7 +172,8 @@ static void chgdet_fsm_sink_secondary_charger_detect(cy_stc_pdstack_context_t *s
             Cy_USBPD_Bch_Phy_ConfigSnkTerm(stack_ctx->ptrUsbPdContext, CHGB_SINK_TERM_SCD);
 
             /* Start timer to apply VDM_SRC for TVDM_SRC_ON */
-            cy_sw_timer_start(stack_ctx->ptrTimerContext, (void *)stack_ctx, APP_BC_GENERIC_TIMER1,
+            cy_sw_timer_start(stack_ctx->ptrTimerContext, (void *)stack_ctx,
+                    CY_PDSTACK_GET_APP_TIMER_ID(stack_ctx, APP_BC_GENERIC_TIMER1),
                     APP_BC_VDP_DM_SRC_ON_PERIOD, chgdet_timer_cb);
             break;
 
@@ -305,11 +315,18 @@ cy_en_usbpd_status_t chgdet_start(cy_stc_pdstack_context_t *stack_ctx)
 cy_en_usbpd_status_t chgdet_stop(cy_stc_pdstack_context_t *stack_ctx)
 {
 #if (defined(CY_IP_MXUSBPD) || defined(CY_IP_M0S8USBPD))
+    if (stack_ctx->port >= NO_OF_TYPEC_PORTS)
+    {
+        return CY_USBPD_STAT_BAD_PARAM;
+    }
+
     chgdet_status_t *chgdet_stat = &gl_chgdet_status[stack_ctx->port];
     cy_stc_usbpd_context_t *drv_ctx = (cy_stc_usbpd_context_t *)(stack_ctx->ptrUsbPdContext);
 
     Cy_USBPD_Bch_Phy_DisableComp(drv_ctx, 0u);
-    cy_sw_timer_stop_range(stack_ctx->ptrTimerContext, APP_BC_GENERIC_TIMER1, APP_CDP_DP_DM_POLL_TIMER);
+    cy_sw_timer_stop_range(stack_ctx->ptrTimerContext,
+            CY_PDSTACK_GET_APP_TIMER_ID(stack_ctx, APP_BC_GENERIC_TIMER1),
+            CY_PDSTACK_GET_APP_TIMER_ID(stack_ctx, APP_CDP_DP_DM_POLL_TIMER));
     Cy_USBPD_Bch_Phy_Dis(drv_ctx);
 
     chgdet_stat->chgdet_fsm_state = CHGDET_FSM_OFF;
@@ -390,7 +407,8 @@ bool chgdet_prepare_deepsleep(cy_stc_pdstack_context_t *stack_ctx)
 
     if (
             (chgdet_stat->chgdet_evt == 0u) &&
-            (!cy_sw_timer_range_enabled (stack_ctx->ptrTimerContext, APP_BC_GENERIC_TIMER1, APP_BC_DP_DM_DEBOUNCE_TIMER))
+            (!cy_sw_timer_range_enabled (stack_ctx->ptrTimerContext,
+                    CY_PDSTACK_GET_APP_TIMER_ID(stack_ctx, APP_BC_GENERIC_TIMER1), APP_BC_DP_DM_DEBOUNCE_TIMER))
        )
     {
         Cy_USBPD_Bch_Phy_Config_DeepSleep ((cy_stc_usbpd_context_t *)(stack_ctx->ptrUsbPdContext));

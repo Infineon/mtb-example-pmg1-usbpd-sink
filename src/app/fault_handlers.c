@@ -99,15 +99,19 @@ bool app_port_fault_count_exceeded(cy_stc_pdstack_context_t * context)
     uint32_t i;
     bool     retval = false;
     uint8_t port = context->port;
-    /*
-     * Check whether the count for any fault type has exceeded the limit specified.
-     */
-    for (i = 0; i < FAULT_TYPE_COUNT; i++)
+
+    if (port < NO_OF_TYPEC_PORTS)
     {
-        if (gl_app_fault_count[port][i] > gl_app_fault_retry_limit[port][i])
+        /*
+         * Check whether the count for any fault type has exceeded the limit specified.
+         */
+        for (i = 0; i < FAULT_TYPE_COUNT; i++)
         {
-            retval = true;
-            break;
+            if (gl_app_fault_count[port][i] > gl_app_fault_retry_limit[port][i])
+            {
+                retval = true;
+                break;
+            }
         }
     }
 
@@ -173,7 +177,7 @@ static void app_handle_fault(cy_stc_pdstack_context_t * context, uint32_t fault_
          * Disable the port until configured timeout elapses.
          */
         Cy_PdStack_Dpm_Stop(context);
-        cy_sw_timer_start(context->timerContext, context, APP_FAULT_RECOVERY_TIMER,
+        cy_sw_timer_start(context->timerContext, context, CY_PDSTACK_GET_APP_TIMER_ID(ptrPdStackContext, APP_FAULT_RECOVERY_TIMER),
                 FAULT_RETRY_DELAY_MS, fault_delayed_recovery_timer_cb);
 #else /* !FAULT_RETRY_DELAY_EN */
 
@@ -198,7 +202,7 @@ static void app_handle_fault(cy_stc_pdstack_context_t * context, uint32_t fault_
         /*
          * Start a timer to try infinite fault recovery with a timeout.
          */
-        cy_sw_timer_start (context->timerContext, context, APP_FAULT_RECOVERY_TIMER,
+        cy_sw_timer_start (context->timerContext, context, CY_PDSTACK_GET_APP_TIMER_ID(ptrPdStackContext, APP_FAULT_RECOVERY_TIMER),
                 FAULT_INFINITE_RECOVERY_DELAY_MS, fault_delayed_recovery_timer_cb);
 #endif /* FAULT_INFINITE_RECOVERY_EN */
     }
@@ -243,7 +247,8 @@ static void fault_recovery_timer_cb(cy_timer_id_t id, void *context)
     }
 
     /* Restart the timer to check VBus and Rp status again. */
-    cy_sw_timer_start (callbackContext->ptrTimerContext, callbackContext, APP_FAULT_RECOVERY_TIMER,
+    cy_sw_timer_start (callbackContext->ptrTimerContext, callbackContext,
+            CY_PDSTACK_GET_APP_TIMER_ID(callbackContext, APP_FAULT_RECOVERY_TIMER),
             period, fault_recovery_timer_cb);
 }
 
@@ -268,7 +273,9 @@ static void app_port_disable_cb(cy_stc_pdstack_context_t * context, cy_en_pdstac
     }
 
     /* Provide a delay to allow VBus turn-on by port partner and then enable the port. */
-    cy_sw_timer_start (context->ptrTimerContext, context, APP_FAULT_RECOVERY_TIMER, period, fault_recovery_timer_cb);
+    cy_sw_timer_start (context->ptrTimerContext, context,
+            CY_PDSTACK_GET_APP_TIMER_ID(context, APP_FAULT_RECOVERY_TIMER),
+            period, fault_recovery_timer_cb);
 }
 
 #endif /* FAULT_HANDLER_ENABLE */
@@ -277,8 +284,11 @@ static void app_port_disable_cb(cy_stc_pdstack_context_t * context, cy_en_pdstac
 void fault_handler_clear_counts (uint8_t port)
 {
 #if FAULT_HANDLER_ENABLE
-    /* Clear all fault counters on disconnect. */
-    memset ((uint8_t *)gl_app_fault_count[port], 0, FAULT_TYPE_COUNT);
+    if (port < NO_OF_TYPEC_PORTS)
+    {
+        /* Clear all fault counters on disconnect. */
+        memset ((uint8_t *)gl_app_fault_count[port], 0, FAULT_TYPE_COUNT);
+    }
 #endif /* FAULT_HANDLER_ENABLE */
 }
 
@@ -419,8 +429,8 @@ void app_ovp_enable(cy_stc_pdstack_context_t * context, uint16_t volt_mV, bool p
         }
         else /* (VBUS_OVP_MODE != VBUS_OVP_MODE_ADC) */
         {
-#if (defined(CY_DEVICE_CCG3) || defined(CY_DEVICE_CCG3PA) || defined(CY_DEVICE_CCG6))
-            Cy_USBPD_Fault_Vbus_OvpEn(context->ptrUsbPdContext, volt_mV, ovp_cb, pfet);
+#if (defined(CY_DEVICE_CCG3) || defined(CY_DEVICE_CCG3PA) || defined(CY_DEVICE_CCG6) || defined(CY_DEVICE_PMG1S3))
+            Cy_USBPD_Fault_Vbus_OvpEnable(context->ptrUsbPdContext, volt_mV, ovp_cb, pfet);
 #endif /* (defined(CY_DEVICE_CCG3) || defined(CY_DEVICE_CCG3PA) || defined(CY_DEVICE_CCG6)) */
         }
 
@@ -443,8 +453,8 @@ void app_ovp_disable(cy_stc_pdstack_context_t * context, bool pfet)
         }
         else
         {
-#if (defined(CY_DEVICE_CCG3) || defined(CY_DEVICE_CCG3PA) || defined(CY_DEVICE_CCG6))
-            Cy_USBPD_Fault_Vbus_OvpDis(context->ptrUsbPdContext, pfet);
+#if (defined(CY_DEVICE_CCG3) || defined(CY_DEVICE_CCG3PA) || defined(CY_DEVICE_CCG6) || defined(CY_DEVICE_PMG1S3))
+            Cy_USBPD_Fault_Vbus_OvpDisable(context->ptrUsbPdContext, pfet);
 #endif /* (defined(CY_DEVICE_CCG3) || defined(CY_DEVICE_CCG3PA) || defined(CY_DEVICE_CCG6)) */
         }
     }
@@ -465,7 +475,7 @@ void app_uvp_enable(cy_stc_pdstack_context_t * context, uint16_t volt_mV, bool p
     if (uvp_config->enable)
     {
         intr_state = Cy_SysLib_EnterCriticalSection ();
-        Cy_USBPD_Fault_Vbus_UvpEn (context->ptrUsbPdContext, volt_mV, uvp_cb, pfet);
+        Cy_USBPD_Fault_Vbus_UvpEnable (context->ptrUsbPdContext, volt_mV, uvp_cb, pfet);
         Cy_SysLib_ExitCriticalSection (intr_state);
     }
 }
@@ -477,7 +487,7 @@ void app_uvp_disable(cy_stc_pdstack_context_t * context, bool pfet)
     /* Disable UVP. */
     if (uvp_config->enable)
     {
-        Cy_USBPD_Fault_Vbus_UvpDis (context->ptrUsbPdContext, pfet);
+        Cy_USBPD_Fault_Vbus_UvpDisable (context->ptrUsbPdContext, pfet);
     }
 }
 

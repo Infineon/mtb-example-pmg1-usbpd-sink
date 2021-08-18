@@ -40,8 +40,8 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-
 #include "cy_pdl.h"
+#include "cyhal.h"
 #include "cybsp.h"
 #include "config.h"
 
@@ -66,7 +66,12 @@ static uint16_t gl_LedBlinkRate = LED_TIMER_PERIOD_DETACHED;
 
 cy_stc_sw_timer_t        gl_TimerCtx;
 cy_stc_usbpd_context_t   gl_UsbPdPort0Ctx;
+
 cy_stc_pdstack_context_t gl_PdStackPort0Ctx;
+#if PMG1_PD_DUALPORT_ENABLE
+cy_stc_usbpd_context_t gl_UsbPdPort1Ctx;
+cy_stc_pdstack_context_t gl_PdStackPort1Ctx;
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
 const cy_stc_pdstack_dpm_params_t pdstack_port0_dpm_params =
 {
@@ -78,9 +83,23 @@ const cy_stc_pdstack_dpm_params_t pdstack_port0_dpm_params =
         .defCur = 90
 };
 
+#if PMG1_PD_DUALPORT_ENABLE
+const cy_stc_pdstack_dpm_params_t pdstack_port1_dpm_params =
+{
+        .dpmSnkWaitCapPeriod = 400,
+        .dpmRpAudioAcc = CY_PD_RP_TERM_RP_CUR_DEF,
+        .dpmDefCableCap = 300,
+        .muxEnableDelayPeriod = 0,
+        .typeCSnkWaitCapPeriod = 0,
+        .defCur = 90
+};
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 cy_stc_pdstack_context_t * gl_PdStackContexts[NO_OF_TYPEC_PORTS] =
 {
-        &gl_PdStackPort0Ctx
+        &gl_PdStackPort0Ctx,
+#if PMG1_PD_DUALPORT_ENABLE
+        &gl_PdStackPort1Ctx
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 };
 
 bool mux_ctrl_init(uint8_t port)
@@ -108,6 +127,19 @@ const cy_stc_sysint_t usbpd_port0_intr1_config =
     .intrPriority = 0U,
 };
 
+#if PMG1_PD_DUALPORT_ENABLE
+const cy_stc_sysint_t usbpd_port1_intr0_config =
+{
+    .intrSrc = (IRQn_Type)mtb_usbpd_port1_IRQ,
+    .intrPriority = 0U,
+};
+
+const cy_stc_sysint_t usbpd_port1_intr1_config =
+{
+    .intrSrc = (IRQn_Type)mtb_usbpd_port1_DS_IRQ,
+    .intrPriority = 0U,
+};
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
 cy_stc_pdstack_context_t *get_pdstack_context(uint8_t portIdx)
 {
@@ -161,6 +193,18 @@ static void cy_usbpd0_intr1_handler(void)
     Cy_USBPD_Intr1Handler(&gl_UsbPdPort0Ctx);
 }
 
+#if PMG1_PD_DUALPORT_ENABLE
+static void cy_usbpd1_intr0_handler(void)
+{
+    Cy_USBPD_Intr0Handler(&gl_UsbPdPort1Ctx);
+}
+
+static void cy_usbpd1_intr1_handler(void)
+{
+    Cy_USBPD_Intr1Handler(&gl_UsbPdPort1Ctx);
+}
+#endif /* PMG1_PD_DUALPORT_ENABLE */
+
 #if APP_FW_LED_ENABLE
 void led_timer_cb (
         cy_timer_id_t id,            /**< Timer ID for which callback is being generated. */
@@ -170,7 +214,7 @@ void led_timer_cb (
     const chgdet_status_t    *chgdet_stat;
 
     /* Toggle the User LED and re-start timer to schedule the next toggle event. */
-    Cy_GPIO_Inv(CYBSP_USER_LED_PORT, CYBSP_USER_LED_PIN);
+    cyhal_gpio_toggle(CYBSP_USER_LED);
 
     /* Calculate the desired LED blink rate based on the correct Type-C connection state. */
     if (stack_ctx->dpmConfig.attach)
@@ -212,6 +256,13 @@ cy_stc_pd_dpm_config_t* get_dpm_connect_stat(void)
 {
     return &(gl_PdStackPort0Ctx.dpmConfig);
 }
+
+#if PMG1_PD_DUALPORT_ENABLE
+cy_stc_pd_dpm_config_t* get_dpm_port1_connect_stat()
+{
+    return &(gl_PdStackPort1Ctx.dpmConfig);
+}
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
 /*
  * Application callback functions for the DPM. Since this application
@@ -264,11 +315,7 @@ int main(void)
     NVIC_EnableIRQ(wdt_interrupt_config.intrSrc);
 
     /* Initialize the soft timer module. */
-#if (!PSVP_FPGA_ENABLE)
     cy_sw_timer_init(&gl_TimerCtx, Cy_SysClk_ClkSysGetFrequency());
-#else
-    cy_sw_timer_init(&gl_TimerCtx, PMG1S3_PSVP_SYSCLK_FREQUENCY);
-#endif /* (!PSVP_FPGA_ENABLE) */
 
     /* Enable global interrupts */
     __enable_irq();
@@ -286,6 +333,15 @@ int main(void)
     Cy_SysInt_Init(&usbpd_port0_intr1_config, &cy_usbpd0_intr1_handler);
     NVIC_EnableIRQ(usbpd_port0_intr1_config.intrSrc);
 
+#if PMG1_PD_DUALPORT_ENABLE
+    /* Configure and enable the USBPD interrupts for Port #1. */
+    Cy_SysInt_Init(&usbpd_port1_intr0_config, &cy_usbpd1_intr0_handler);
+    NVIC_EnableIRQ(usbpd_port1_intr0_config.intrSrc);
+
+    Cy_SysInt_Init(&usbpd_port1_intr1_config, &cy_usbpd1_intr1_handler);
+    NVIC_EnableIRQ(usbpd_port1_intr1_config.intrSrc);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
+
     /* Initialize the USBPD driver */
 #if defined(CY_DEVICE_CCG3)
     Cy_USBPD_Init(&gl_UsbPdPort0Ctx, 0, mtb_usbpd_port0_HW, NULL,
@@ -293,6 +349,10 @@ int main(void)
 #else
     Cy_USBPD_Init(&gl_UsbPdPort0Ctx, 0, mtb_usbpd_port0_HW, mtb_usbpd_port0_HW_TRIM,
             (cy_stc_usbpd_config_t *)&mtb_usbpd_port0_config, get_dpm_connect_stat);
+#if PMG1_PD_DUALPORT_ENABLE
+    Cy_USBPD_Init(&gl_UsbPdPort1Ctx, 1, mtb_usbpd_port1_HW, mtb_usbpd_port1_HW_TRIM,
+            (cy_stc_usbpd_config_t *)&mtb_usbpd_port1_config, get_dpm_port1_connect_stat);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 #endif
 
     /* Initialize the Device Policy Manager. */
@@ -303,21 +363,39 @@ int main(void)
                        &pdstack_port0_dpm_params,
                        &gl_TimerCtx);
 
+#if PMG1_PD_DUALPORT_ENABLE
+    Cy_PdStack_Dpm_Init(&gl_PdStackPort1Ctx,
+                       &gl_UsbPdPort1Ctx,
+                       &mtb_usbpd_port1_pdstack_config,
+                       app_get_callback_ptr(&gl_PdStackPort1Ctx),
+                       &pdstack_port1_dpm_params,
+                       &gl_TimerCtx);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
+
     /* Perform application level initialization. */
     app_init(&gl_PdStackPort0Ctx);
+#if PMG1_PD_DUALPORT_ENABLE
+    app_init(&gl_PdStackPort1Ctx);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
     /* Initialize the fault configuration values */
     fault_handler_init_vars(&gl_PdStackPort0Ctx);
+#if PMG1_PD_DUALPORT_ENABLE
+    fault_handler_init_vars(&gl_PdStackPort1Ctx);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
     /* Start any timers or tasks associated with application instrumentation. */
     instrumentation_start();
 
     /* Start the device policy manager operation. This will initialize the USB-PD block and enable connect detection. */
     Cy_PdStack_Dpm_Start(&gl_PdStackPort0Ctx);
+#if PMG1_PD_DUALPORT_ENABLE
+    Cy_PdStack_Dpm_Start(&gl_PdStackPort1Ctx);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
 #if APP_FW_LED_ENABLE
-    Cy_GPIO_SetHSIOM(CYBSP_USER_LED_PORT, CYBSP_USER_LED_PIN, HSIOM_SEL_GPIO);
-    Cy_GPIO_SetDrivemode(CYBSP_USER_LED_PORT, CYBSP_USER_LED_PIN, CY_GPIO_DM_STRONG);
+    /* Configure LED pin as a strong drive output */
+    cyhal_gpio_init(CYBSP_USER_LED, CYHAL_GPIO_DIR_OUTPUT, CYHAL_GPIO_DRIVE_STRONG, false);
 
     /* Start a timer that will blink the FW ACTIVE LED. */
     cy_sw_timer_start (&gl_TimerCtx, (void *)&gl_PdStackPort0Ctx, (cy_timer_id_t)LED_TIMER_ID,
@@ -333,18 +411,28 @@ int main(void)
     {
         /* Handle the device policy tasks for each PD port. */
         Cy_PdStack_Dpm_Task(&gl_PdStackPort0Ctx);
+#if PMG1_PD_DUALPORT_ENABLE
+        Cy_PdStack_Dpm_Task(&gl_PdStackPort1Ctx);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
         /* Perform any application level tasks. */
         app_task(&gl_PdStackPort0Ctx);
+#if PMG1_PD_DUALPORT_ENABLE
+        app_task(&gl_PdStackPort1Ctx);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
         /* Perform tasks associated with instrumentation. */
         instrumentation_task();
 
 #if SYS_DEEPSLEEP_ENABLE
-#if (!PSVP_FPGA_ENABLE)
         /* If possible, enter deep sleep mode for power saving. */
-        system_sleep(&gl_PdStackPort0Ctx);
-#endif /* (!PSVP_FPGA_ENABLE) */
+        system_sleep(&gl_PdStackPort0Ctx, 
+#if PMG1_PD_DUALPORT_ENABLE
+                &gl_PdStackPort1Ctx
+#else
+                NULL
+#endif /* PMG1_PD_DUALPORT_ENABLE */
+                );
 #endif /* SYS_DEEPSLEEP_ENABLE */
     }
 }

@@ -51,7 +51,11 @@
 
 /* This application only supports devices with a single USB-C Port with Power Delivery Support. */
 #ifndef NO_OF_TYPEC_PORTS
+#if PMG1_PD_DUALPORT_ENABLE
+#define NO_OF_TYPEC_PORTS                       (2u)
+#else
 #define NO_OF_TYPEC_PORTS                       (1u)
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 #endif /* NO_OF_TYPEC_PORTS */
 
 /* Enable PD spec Rev 3.x support */
@@ -73,6 +77,18 @@
 
 /* The ADC which should be used to measure VBus voltage on the Type-C side. */
 #define APP_VBUS_POLL_ADC_ID                    (CY_USBPD_ADC_ID_0)
+
+/* Period in ms for turning on VBus FET. */
+#define APP_VBUS_FET_ON_TIMER_PERIOD            (5u)
+
+/* Period in ms for turning off VBus FET. */
+#define APP_VBUS_FET_OFF_TIMER_PERIOD           (1u)
+
+/** 100: Timer used for providing delay for VBUS FET ON. */
+#define APP_VBUS_FET_ON_TIMER                   (100u)
+
+/** 101: Timer used for providing delay for VBUS FET OFF. */
+#define APP_VBUS_FET_OFF_TIMER                  (101u)
 
 /*
  * The Analog-MUX bus input which is used to measure VBus voltage. Choose AMUXBUS_A on PMG1-S2 and AMUXBUS_B on
@@ -184,11 +200,6 @@
  * The LED toggle period (ms) to be used when a BC 1.2 CDP (Charging Downstream Port) source without PD support is connected.
  */
 #define LED_TIMER_PERIOD_CDP_SRC                (10000u)
-
-/*
- * System Clock Frequency that applies when this code example is used on the PMG1-S3 Pre-Silicon Validation Platform.
- */
-#define PMG1S3_PSVP_SYSCLK_FREQUENCY            (26000000u)
 
 /*
  * Enable watchdog hardware reset for CPU lock-up recovery. Note that watchdog reset can only be enabled if we have

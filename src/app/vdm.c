@@ -71,6 +71,28 @@ const vdm_info_config_t vdm_info[NO_OF_TYPEC_PORTS] =
 
         .respLength = 4u
     }
+#if PMG1_PD_DUALPORT_ENABLE
+    ,
+
+    {
+        .discId = {
+#if CY_PD_REV3_ENABLE
+            0xFF00A041UL,               /* VDM Header. */
+#else
+            0xFF008041UL,               /* VDM Header. */
+#endif /* CY_PD_REV3_ENABLE */
+
+            0x18400000UL,               /* ID Header. */
+            0x00000000UL,               /* Cert Stat. */
+            0x00000000UL,               /* Product VDO. */
+            0x00000000UL,               /* Not Used. */
+            0x00000000UL,               /* Not Used. */
+            0x00000000UL                /* Not Used. */
+        },
+
+        .respLength = 4u
+    }
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 };
 
 /* Update the VDM response information with ID information from the config structure. */

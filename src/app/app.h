@@ -223,7 +223,7 @@ app_status_t* app_get_status(uint8_t port);
  *
  * @return true if the device went into sleep, false otherwise.
  */
-bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext);
+bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext, cy_stc_pdstack_context_t *ptrPdStack1Context);
 
 /*****************************************************************************
   Functions related to power

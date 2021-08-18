@@ -60,19 +60,58 @@ bool app_psnk_vbus_ovp_cbk(void * cbkContext, bool comp_out);
 
 extern cy_stc_pdstack_context_t *get_pdstack_context(uint8_t portIdx);
 
+
+#if defined(CY_DEVICE_PMG1S3)
+void vbus_fet_off_cbk (cy_timer_id_t id,  void * context)
+{
+    cy_stc_pdstack_context_t *ptrPdStackContext = (cy_stc_pdstack_context_t *)context;
+
+    Cy_USBPD_Vbus_NgdoEqCtrl (ptrPdStackContext->ptrUsbPdContext, false);
+    Cy_USBPD_Vbus_NgdoOff(ptrPdStackContext->ptrUsbPdContext, false);
+}
+#endif /* defined(CY_DEVICE_PMG1S3) */
+
+
 void sink_fet_off(cy_stc_pdstack_context_t * context)
 {
 #if defined(CY_DEVICE_CCG3PA)
     Cy_USBPD_Vbus_GdrvCfetOff(context->ptrUsbPdContext, VBUS_FET_CTRL);
+#elif defined(CY_DEVICE_PMG1S3)
+    cy_sw_timer_stop(context->ptrTimerContext, CY_PDSTACK_GET_APP_TIMER_ID(context, APP_VBUS_FET_ON_TIMER));
+
+    Cy_USBPD_Vbus_NgdoG1Ctrl (context->ptrUsbPdContext, false);
+    Cy_USBPD_Vbus_NgdoEqCtrl (context->ptrUsbPdContext, true);
+
+    cy_sw_timer_start(context->ptrTimerContext, context, 
+                    CY_PDSTACK_GET_APP_TIMER_ID(context, APP_VBUS_FET_OFF_TIMER),
+                    APP_VBUS_FET_OFF_TIMER_PERIOD, vbus_fet_off_cbk);
 #else
     Cy_USBPD_Vbus_GdrvCfetOff(context->ptrUsbPdContext, false);
 #endif /* defined(CY_DEVICE_CCG3PA) */
 }
 
+
+#if defined(CY_DEVICE_PMG1S3)
+void vbus_fet_on_cbk (cy_timer_id_t id,  void * context)
+{
+    cy_stc_pdstack_context_t *ptrPdStackContext = (cy_stc_pdstack_context_t *)context;
+    /* Turn On the FET. */
+    Cy_USBPD_Vbus_NgdoG1Ctrl (ptrPdStackContext->ptrUsbPdContext, true);
+}
+#endif /* defined(CY_DEVICE_PMG1S3) */
+
+
+
 void sink_fet_on(cy_stc_pdstack_context_t * context)
 {
 #if defined(CY_DEVICE_CCG3PA)
     Cy_USBPD_Vbus_GdrvCfetOn(context->ptrUsbPdContext, VBUS_FET_CTRL);
+#elif defined(CY_DEVICE_PMG1S3)
+    Cy_USBPD_Vbus_NgdoOn(context->ptrUsbPdContext, false);
+    
+    cy_sw_timer_start(context->ptrTimerContext, context, 
+                    CY_PDSTACK_GET_APP_TIMER_ID(context, APP_VBUS_FET_ON_TIMER),
+                    APP_VBUS_FET_ON_TIMER_PERIOD, vbus_fet_on_cbk);
 #else
     Cy_USBPD_Vbus_GdrvCfetOn(context->ptrUsbPdContext, false);
 #endif /* defined(CY_DEVICE_CCG3PA) */
@@ -204,24 +243,32 @@ static void app_psnk_tmr_cbk(cy_timer_id_t id,  void * callbackCtx)
     uint8_t port = context->port;
     app_status_t* app_stat = app_get_status(port);
 
+    if (context->port != 0u)
+    {
+        id = (cy_timer_id_t)((uint8_t)id - (uint8_t)APP_TIMERS_START_ID);
+    }
+
     switch((cy_sw_timer_id_t)id)
     {
         case APP_PSINK_DIS_TIMER:
-            cy_sw_timer_stop(context->ptrTimerContext, APP_PSINK_DIS_MONITOR_TIMER);
+            cy_sw_timer_stop(context->ptrTimerContext,
+                    CY_PDSTACK_GET_APP_TIMER_ID(context, APP_PSINK_DIS_MONITOR_TIMER));
             Cy_USBPD_Vbus_DischargeOff(context->ptrUsbPdContext);
             break;
 
         case APP_PSINK_DIS_MONITOR_TIMER:
             if(vbus_is_present(context, CY_PD_VSAFE_5V, 0) == false)
             {
-                cy_sw_timer_stop(context->ptrTimerContext, APP_PSINK_DIS_TIMER);
+                cy_sw_timer_stop(context->ptrTimerContext,
+                        CY_PDSTACK_GET_APP_TIMER_ID(context, APP_PSINK_DIS_TIMER));
                 Cy_USBPD_Vbus_DischargeOff(context->ptrUsbPdContext);
                 app_stat->snk_dis_cbk(context);
             }
             else
             {
                 /*Start Monitor Timer again*/
-                cy_sw_timer_start(context->ptrTimerContext, context, APP_PSINK_DIS_MONITOR_TIMER,
+                cy_sw_timer_start(context->ptrTimerContext, context,
+                        CY_PDSTACK_GET_APP_TIMER_ID(context, APP_PSINK_DIS_MONITOR_TIMER),
                         APP_PSINK_DIS_MONITOR_TIMER_PERIOD, app_psnk_tmr_cbk);
             }
             break;
@@ -251,7 +298,9 @@ void psnk_disable (cy_stc_pdstack_context_t * context, cy_pdstack_sink_discharge
     gl_psnk_enabled[port] = false;
 
     Cy_USBPD_Vbus_DischargeOff(context->ptrUsbPdContext);
-    cy_sw_timer_stop_range(context->ptrTimerContext, APP_PSINK_DIS_TIMER, APP_PSINK_DIS_MONITOR_TIMER);
+    cy_sw_timer_stop_range(context->ptrTimerContext,
+            CY_PDSTACK_GET_APP_TIMER_ID(context, APP_PSINK_DIS_TIMER), 
+            CY_PDSTACK_GET_APP_TIMER_ID(context, APP_PSINK_DIS_MONITOR_TIMER));
 
     if ((snk_discharge_off_handler != NULL) && (context->dpmConfig.dpmEnabled))
     {
@@ -260,9 +309,11 @@ void psnk_disable (cy_stc_pdstack_context_t * context, cy_pdstack_sink_discharge
         app_stat->snk_dis_cbk = snk_discharge_off_handler;
 
         /* Start Power source enable and monitor timers. */
-        cy_sw_timer_start(context->ptrTimerContext, context, APP_PSINK_DIS_TIMER,
+        cy_sw_timer_start(context->ptrTimerContext, context,
+                CY_PDSTACK_GET_APP_TIMER_ID(context, APP_PSINK_DIS_TIMER),
                 APP_PSINK_DIS_TIMER_PERIOD, app_psnk_tmr_cbk);
-        cy_sw_timer_start(context->ptrTimerContext, context, APP_PSINK_DIS_MONITOR_TIMER,
+        cy_sw_timer_start(context->ptrTimerContext, context,
+                CY_PDSTACK_GET_APP_TIMER_ID(context, APP_PSINK_DIS_MONITOR_TIMER),
                 APP_PSINK_DIS_MONITOR_TIMER_PERIOD, app_psnk_tmr_cbk);
     }
 

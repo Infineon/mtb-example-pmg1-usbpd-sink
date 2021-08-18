@@ -75,7 +75,9 @@ static void app_cbl_dsc_callback (cy_stc_pdstack_context_t *ptrPdStackContext, c
     /* Keep repeating the DPM command until we succeed. */
     if (resp == CY_PDSTACK_SEQ_ABORTED)
     {
-        cy_sw_timer_start (ptrPdStackContext->ptrTimerContext, ptrPdStackContext, APP_CBL_DISC_TRIGGER_TIMER, APP_CBL_DISC_TIMER_PERIOD, app_cbl_dsc_timer_cb);
+        cy_sw_timer_start (ptrPdStackContext->ptrTimerContext, ptrPdStackContext,
+                CY_PDSTACK_GET_APP_TIMER_ID(ptrPdStackContext, APP_CBL_DISC_TRIGGER_TIMER),
+                APP_CBL_DISC_TIMER_PERIOD, app_cbl_dsc_timer_cb);
     }
 }
 
@@ -169,10 +171,10 @@ bool app_extd_msg_handler(cy_stc_pdstack_context_t *ptrPdStackContext, cy_stc_pd
        )
     {
         cy_sw_timer_start(ptrPdStackContext->timerContext, ptrPdStackContext,
-                          APP_CHUNKED_MSG_RESP_TIMER, 45, app_send_not_supported_cb);
+                          CY_PDSTACK_GET_APP_TIMER_ID(ptrPdStackContext, APP_CHUNKED_MSG_RESP_TIMER), 45, app_send_not_supported_cb);
 
         /* Stop the PD_GENERIC_TIMER to prevent premature return to ready state. */
-        cy_sw_timer_stop(ptrPdStackContext->timerContext, PD_GENERIC_TIMER);
+        cy_sw_timer_stop(ptrPdStackContext->timerContext, CY_PDSTACK_GET_PD_TIMER_ID(ptrPdStackContext, PD_GENERIC_TIMER));
     }
     else
     {
@@ -239,6 +241,11 @@ void app_event_handler(cy_stc_pdstack_context_t *ptrPdStackContext,
     bool  typec_only = false;
     uint8_t port = ptrPdStackContext->port;
 
+    if (port >= NO_OF_TYPEC_PORTS)
+    {
+        return;
+    }
+
     switch(evt)
     {
         case APP_EVT_TYPEC_STARTED:
@@ -255,7 +262,7 @@ void app_event_handler(cy_stc_pdstack_context_t *ptrPdStackContext,
             /* Clear all fault counters if we have seen a change in polarity from previous connection. */
             if (ptrPdStackContext->dpmConfig.polarity != gl_app_previous_polarity[port])
             {
-                fault_handler_clear_counts (ptrPdStackContext->port);
+                fault_handler_clear_counts (port);
             }
             gl_app_previous_polarity[port] = ptrPdStackContext->dpmConfig.polarity ;
             break;
@@ -293,7 +300,8 @@ void app_event_handler(cy_stc_pdstack_context_t *ptrPdStackContext,
                 if (!typec_only)
                 {
                     set_mux (ptrPdStackContext, MUX_CONFIG_ISOLATE, 0);
-                    cy_sw_timer_stop (ptrPdStackContext->ptrTimerContext, APP_AME_TIMEOUT_TIMER);
+                    cy_sw_timer_stop (ptrPdStackContext->ptrTimerContext,
+                            CY_PDSTACK_GET_APP_TIMER_ID(ptrPdStackContext, APP_AME_TIMEOUT_TIMER));
                 }
             }
 
@@ -449,12 +457,15 @@ void app_init(cy_stc_pdstack_context_t *ptrPdStackContext)
 
 #if SYS_DEEPSLEEP_ENABLE
 /* Implements PMG1 deep sleep functionality for power saving. */
-bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext)
+bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext, cy_stc_pdstack_context_t *ptrPdStack1Context)
 {
     uint32_t intr_state;
     bool dpm_slept = false;
     bool retval = false;
     bool bc_slept = true;
+#if PMG1_PD_DUALPORT_ENABLE
+    bool dpm_port1_slept = false;
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
     /* Do one DPM sleep capability check before locking interrupts out. */
     if (
@@ -465,6 +476,16 @@ bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext)
         return retval;
     }
 
+#if PMG1_PD_DUALPORT_ENABLE
+    if (
+            (Cy_PdStack_Dpm_IsIdle (ptrPdStack1Context, &dpm_port1_slept) != CY_PDSTACK_STAT_SUCCESS) ||
+            (!dpm_port1_slept)
+       )
+    {
+        return retval;
+    }
+#endif /* PMG1_PD_DUALPORT_ENABLE */
+
     intr_state = Cy_SysLib_EnterCriticalSection();
 
 #if BATTERY_CHARGING_ENABLE
@@ -474,18 +495,29 @@ bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext)
     if (bc_slept)
     {
         if (
-                (Cy_PdStack_Dpm_PrepareDeepSleep(ptrPdStackContext, &dpm_slept) == CY_PDSTACK_STAT_SUCCESS) &&
-                (dpm_slept)
+                ((Cy_PdStack_Dpm_PrepareDeepSleep(ptrPdStackContext, &dpm_slept) == CY_PDSTACK_STAT_SUCCESS) &&
+                (dpm_slept))
+#if PMG1_PD_DUALPORT_ENABLE
+                &&
+                ((Cy_PdStack_Dpm_PrepareDeepSleep(ptrPdStack1Context, &dpm_port1_slept) == CY_PDSTACK_STAT_SUCCESS) &&
+                (dpm_port1_slept))
+#endif /* PMG1_PD_DUALPORT_ENABLE */
            )
         {
             cy_sw_timer_enter_sleep(ptrPdStackContext->ptrTimerContext);
 
             Cy_USBPD_SetReference(ptrPdStackContext->ptrUsbPdContext, true);
+#if PMG1_PD_DUALPORT_ENABLE
+            Cy_USBPD_SetReference(ptrPdStack1Context->ptrUsbPdContext, true);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
 
             /* Device sleep entry. */
             Cy_SysPm_CpuEnterDeepSleep();
 
             Cy_USBPD_SetReference(ptrPdStackContext->ptrUsbPdContext, false);
+#if PMG1_PD_DUALPORT_ENABLE
+            Cy_USBPD_SetReference(ptrPdStack1Context->ptrUsbPdContext, false);
+#endif /* PMG1_PD_DUALPORT_ENABLE */
             retval = true;
         }
     }
@@ -498,6 +530,13 @@ bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext)
         Cy_PdStack_Dpm_Resume(ptrPdStackContext, &dpm_slept);
     }
 
+#if PMG1_PD_DUALPORT_ENABLE
+    if (dpm_port1_slept)
+    {
+        Cy_PdStack_Dpm_Resume(ptrPdStack1Context, &dpm_port1_slept);
+    }
+#endif /* PMG1_PD_DUALPORT_ENABLE */
+
 #if BATTERY_CHARGING_ENABLE
     if (bc_slept)
     {
@@ -505,6 +544,7 @@ bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext)
     }
 #endif /* BATTERY_CHARGING_ENABLE */
 
+    (void)ptrPdStack1Context;
     return retval;
 }
 #endif /* SYS_DEEPSLEEP_ENABLE */
@@ -516,7 +556,7 @@ bool vconn_enable(cy_stc_pdstack_context_t *ptrPdStackContext, uint8_t channel)
     Cy_PdStack_Dpm_ProtResetRx(ptrPdStackContext, CY_PD_SOP_PRIME);
     Cy_PdStack_Dpm_ProtResetRx(ptrPdStackContext, CY_PD_SOP_DPRIME);
 
-    if (Cy_USBPD_VConn_Enable(ptrPdStackContext->ptrUsbPdContext, channel) != CY_USBPD_STAT_SUCCESS)
+    if (Cy_USBPD_Vconn_Enable(ptrPdStackContext->ptrUsbPdContext, channel) != CY_USBPD_STAT_SUCCESS)
     {
         return false;
     }
@@ -529,14 +569,14 @@ bool vconn_enable(cy_stc_pdstack_context_t *ptrPdStackContext, uint8_t channel)
 void vconn_disable(cy_stc_pdstack_context_t *ptrPdStackContext, uint8_t channel)
 {
 #if (!PMG1_VCONN_DISABLE)
-    Cy_USBPD_VConn_Disable(ptrPdStackContext->ptrUsbPdContext, channel);
+    Cy_USBPD_Vconn_Disable(ptrPdStackContext->ptrUsbPdContext, channel);
 #endif /* (!PMG1_VCONN_DISABLE) */
 }
 
 bool vconn_is_present(cy_stc_pdstack_context_t *ptrPdStackContext)
 {
 #if (!PMG1_VCONN_DISABLE)
-    return Cy_USBPD_VConn_IsPresent(ptrPdStackContext->ptrUsbPdContext, ptrPdStackContext->dpmConfig.revPol);
+    return Cy_USBPD_Vconn_IsPresent(ptrPdStackContext->ptrUsbPdContext, ptrPdStackContext->dpmConfig.revPol);
 #else
     return false;
 #endif /* (!PMG1_VCONN_DISABLE) */
