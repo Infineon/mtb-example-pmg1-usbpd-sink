@@ -7,7 +7,7 @@
 * Related Document: See README.md
 *
 *******************************************************************************
-* Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2021-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -39,11 +39,12 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#include <config.h>
-#include <cy_pdstack_common.h>
-#include <cy_sw_timer.h>
-#include <vdm.h>
-#include <app.h>
+#include "config.h"
+#include "cy_pdstack_common.h"
+#include "cy_pdstack_utils.h"
+#include "cy_sw_timer.h"
+#include "vdm.h"
+#include "app.h"
 
 /* Stores Discover ID response VDO count */
 static uint8_t  gl_vdm_id_vdo_cnt[NO_OF_TYPEC_PORTS];
@@ -175,8 +176,7 @@ void eval_vdm(cy_stc_pdstack_context_t * context, const cy_stc_pdstack_pd_packet
                                 uint8_t max_do_cnt = 4;
 
                                 /* Make sure to clear fields that are reserved under PD 2.0. */
-                                id_hdr.std_id_hdr.prodTypeDfp = 0;
-                                id_hdr.std_id_hdr.rsvd1         = 0;
+                                id_hdr.val &= 0xFC1FFFFF;
 
                                 /* Make sure to not use invalid product types. */
                                 if (id_hdr.std_id_hdr.prodType == CY_PDSTACK_PROD_TYPE_PSD)

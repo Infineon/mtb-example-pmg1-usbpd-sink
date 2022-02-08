@@ -4,7 +4,7 @@ This code example demonstrates USB Type-C attach detection and USB Power Deliver
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-pmg1-usbpd-sink)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzE4NTYiLCJTcGVjIE51bWJlciI6IjAwMi0zMTg1NiIsIkRvYyBUaXRsZSI6IkVaLVBEJnRyYWRlOyBQTUcxIE1DVTogVVNCUEQgc2luayIsInJpZCI6Im1kZGQiLCJEb2MgdmVyc2lvbiI6IjIuMC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IldJUkVEIiwiRG9jIEZhbWlseSI6IlRZUEUtQyBVU0IifQ==)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzE4NTYiLCJTcGVjIE51bWJlciI6IjAwMi0zMTg1NiIsIkRvYyBUaXRsZSI6IkVaLVBEJnRyYWRlOyBQTUcxIE1DVTogVVNCUEQgc2luayIsInJpZCI6Im1kZGQiLCJEb2MgdmVyc2lvbiI6IjIuMS4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IldJUkVEIiwiRG9jIEZhbWlseSI6IlRZUEUtQyJ9)
 
 ## Requirements
 
@@ -356,6 +356,7 @@ Document Title: *CE231856* – *EZ-PD&trade; PMG1 MCU: USBPD sink*
 | ------- | --------------------- |
 | 1.0.0   | New code example      |
 | 2.0.0   | Switched to default BSP from custom BSP |
+| 2.1.0   | PD 2.0 Compliance & Build Error fix |
 ------
 
 All other trademarks or registered trademarks referenced herein are the property of their respective owners.
