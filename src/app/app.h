@@ -48,10 +48,10 @@
  ******************************************************************************/
 
 #include <stdint.h>
-#include <config.h>
-#include <cy_usbpd_vbus_ctrl.h>
-#include <cy_usbpd_typec.h>
-#include <cy_pdstack_dpm.h>
+#include "config.h"
+#include "cy_usbpd_vbus_ctrl.h"
+#include "cy_usbpd_typec.h"
+#include "cy_pdstack_dpm.h"
 
 /*******************************************************************************
  * MACRO Definition
@@ -268,7 +268,7 @@ bool vconn_is_present(cy_stc_pdstack_context_t *ptrPdStackContext);
  *
  * @return true if power is present on VBus, else returns false
  */
-bool vbus_is_present(cy_stc_pdstack_context_t *ptrPdStackContext, uint16_t volt, int8 per);
+bool vbus_is_present(cy_stc_pdstack_context_t *ptrPdStackContext, uint16_t volt, int8_t per);
 
 /**
  * @brief This function return current VBUS voltage in mV

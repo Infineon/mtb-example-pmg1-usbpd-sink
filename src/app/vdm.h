@@ -47,7 +47,7 @@
  * Header files including
  ******************************************************************************/
 
-#include <cy_pdstack_common.h>
+#include "cy_pdstack_common.h"
 
 /* Data object index of the ID Header field in the Discover Identity response. */
 #define ID_HEADER_DO_INDEX                      (1u)

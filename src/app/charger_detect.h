@@ -48,10 +48,10 @@
  * Header files including
  ******************************************************************************/
 
-#include <config.h>
-#include <cy_usbpd_common.h>
-#include <cy_usbpd_bch.h>
-#include <cy_pdstack_common.h>
+#include "config.h"
+#include "cy_usbpd_common.h"
+#include "cy_usbpd_bch.h"
+#include "cy_pdstack_common.h"
 
 /*******************************************************************************
  * MACRO Definition

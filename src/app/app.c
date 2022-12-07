@@ -40,17 +40,17 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#include <cybsp.h>
-#include <cy_pdstack_common.h>
+#include "cybsp.h"
+#include "cy_pdstack_common.h"
 #include "cy_pdstack_dpm.h"
-#include <config.h>
-#include <psink.h>
-#include <swap.h>
-#include <vdm.h>
-#include <app.h>
-#include <cy_sw_timer.h>
-#include <cy_sw_timer_id.h>
-#include <cy_gpio.h>
+#include "config.h"
+#include "psink.h"
+#include "swap.h"
+#include "vdm.h"
+#include "app.h"
+#include "cy_pdutils_sw_timer.h"
+#include "timer_id.h"
+#include "cy_gpio.h"
 
 #if BATTERY_CHARGING_ENABLE
 #include <charger_detect.h>
@@ -75,8 +75,8 @@ static void app_cbl_dsc_callback (cy_stc_pdstack_context_t *ptrPdStackContext, c
     /* Keep repeating the DPM command until we succeed. */
     if (resp == CY_PDSTACK_SEQ_ABORTED)
     {
-        cy_sw_timer_start (ptrPdStackContext->ptrTimerContext, ptrPdStackContext,
-                CY_PDSTACK_GET_APP_TIMER_ID(ptrPdStackContext, APP_CBL_DISC_TRIGGER_TIMER),
+        Cy_PdUtils_SwTimer_Start (ptrPdStackContext->ptrTimerContext, ptrPdStackContext,
+                GET_APP_TIMER_ID(ptrPdStackContext, APP_CBL_DISC_TRIGGER_TIMER),
                 APP_CBL_DISC_TIMER_PERIOD, app_cbl_dsc_timer_cb);
     }
 }
@@ -170,11 +170,11 @@ bool app_extd_msg_handler(cy_stc_pdstack_context_t *ptrPdStackContext, cy_stc_pd
             )
        )
     {
-        cy_sw_timer_start(ptrPdStackContext->timerContext, ptrPdStackContext,
-                          CY_PDSTACK_GET_APP_TIMER_ID(ptrPdStackContext, APP_CHUNKED_MSG_RESP_TIMER), 45, app_send_not_supported_cb);
+        Cy_PdUtils_SwTimer_Start(ptrPdStackContext->timerContext, ptrPdStackContext,
+                          GET_APP_TIMER_ID(ptrPdStackContext, APP_CHUNKED_MSG_RESP_TIMER), 45, app_send_not_supported_cb);
 
         /* Stop the PD_GENERIC_TIMER to prevent premature return to ready state. */
-        cy_sw_timer_stop(ptrPdStackContext->timerContext, CY_PDSTACK_GET_PD_TIMER_ID(ptrPdStackContext, PD_GENERIC_TIMER));
+        Cy_PdUtils_SwTimer_Stop(ptrPdStackContext->timerContext, CY_PDSTACK_GET_PD_TIMER_ID(ptrPdStackContext, PD_GENERIC_TIMER));
     }
     else
     {
@@ -205,7 +205,7 @@ bool app_extd_msg_handler(cy_stc_pdstack_context_t *ptrPdStackContext, cy_stc_pd
         extd_dpm_buf.extdHdr.extd.request  = true;
         extd_dpm_buf.extdHdr.extd.chunkNum = pd_pkt_p->hdr.hdr.chunkNum + 1;
         extd_dpm_buf.datPtr                = (uint8_t*)&gl_extd_dummy_data;
-        extd_dpm_buf.timeout                = CY_PD_SENDER_RESPONSE_TIMER_PERIOD;
+        extd_dpm_buf.timeout                = ptrPdStackContext->senderRspTimeout;
 
         /* Send next chunk request */
         Cy_PdStack_Dpm_SendPdCommand(ptrPdStackContext,CY_PDSTACK_DPM_CMD_SEND_EXTENDED,
@@ -300,8 +300,8 @@ void app_event_handler(cy_stc_pdstack_context_t *ptrPdStackContext,
                 if (!typec_only)
                 {
                     set_mux (ptrPdStackContext, MUX_CONFIG_ISOLATE, 0);
-                    cy_sw_timer_stop (ptrPdStackContext->ptrTimerContext,
-                            CY_PDSTACK_GET_APP_TIMER_ID(ptrPdStackContext, APP_AME_TIMEOUT_TIMER));
+                    Cy_PdUtils_SwTimer_Stop (ptrPdStackContext->ptrTimerContext,
+                            GET_APP_TIMER_ID(ptrPdStackContext, APP_AME_TIMEOUT_TIMER));
                 }
             }
 
@@ -504,7 +504,7 @@ bool system_sleep(cy_stc_pdstack_context_t *ptrPdStackContext, cy_stc_pdstack_co
 #endif /* PMG1_PD_DUALPORT_ENABLE */
            )
         {
-            cy_sw_timer_enter_sleep(ptrPdStackContext->ptrTimerContext);
+            Cy_PdUtils_SwTimer_EnterSleep(ptrPdStackContext->ptrTimerContext);
 
             Cy_USBPD_SetReference(ptrPdStackContext->ptrUsbPdContext, true);
 #if PMG1_PD_DUALPORT_ENABLE
@@ -586,7 +586,7 @@ bool vconn_is_present(cy_stc_pdstack_context_t *ptrPdStackContext)
 #include "cy_usbpd_pmg1s3_regs.h"
 #endif /* PSVP_FPGA_ENABLE */
 
-bool vbus_is_present(cy_stc_pdstack_context_t *ptrPdStackContext, uint16_t volt, int8 per)
+bool vbus_is_present(cy_stc_pdstack_context_t *ptrPdStackContext, uint16_t volt, int8_t per)
 {
 #if PSVP_FPGA_ENABLE
     PPDSS_REGS_T pd = ptrPdStackContext->ptrUsbPdContext->base;

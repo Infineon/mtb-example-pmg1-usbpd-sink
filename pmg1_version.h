@@ -1,14 +1,10 @@
 /******************************************************************************
-* File Name: swap.h
+* @file pmg1_version.h
 *
-* Description: This header file defines function prototypes for handling of
-*              USB Power-Delivery Role Swap requests as part of the PMG1 MCU USB-PD
-*              Sink Code Example for ModusToolBox.
-*
-* Related Document: See README.md
+* @brief This file defines the version details of the PMG1 Code Example.
 *
 *******************************************************************************
-* Copyright 2021-2022, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -40,60 +36,43 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#ifndef _SWAP_H_
-#define _SWAP_H_
-
-/*******************************************************************************
- * Header files including
- ******************************************************************************/
-
-#include "config.h"
-#include "cy_pdstack_common.h"
-
-/*****************************************************************************
- * Global Function Declaration
- *****************************************************************************/
-/**
- * @brief This function evaluates Data role swap request
- *
- * @param port Port index the function is performed for.
- * @param app_resp_handler Application handler callback function.
- *
- * @return None
- */
-void eval_dr_swap(cy_stc_pdstack_context_t * context, cy_pdstack_app_resp_cbk_t app_resp_handler);
+#ifndef _PMG1_VERSION_H_
+#define _PMG1_VERSION_H_
 
 /**
- * @brief This function evaluates Power role swap request
- *
- * @param port Port index the function is performed for.
- * @param app_resp_handler Application handler callback function.
- *
- * @return None
+   @brief Major version of the PMG1 CE.
  */
-void eval_pr_swap(cy_stc_pdstack_context_t * context, cy_pdstack_app_resp_cbk_t app_resp_handler);
+#define PMG1_CE_MAJOR_VERSION                                (3)
 
 /**
- * @brief This function evaluates VConn swap request
- *
- * @param port Port index the function is performed for.
- * @param app_resp_handler Application handler callback function.
- *
- * @return None
+   @brief Minor version of the PMG1 CE.
  */
-void eval_vconn_swap(cy_stc_pdstack_context_t * context, cy_pdstack_app_resp_cbk_t app_resp_handler);
+#define PMG1_CE_MINOR_VERSION                                (0)
 
 /**
- * @brief This function evaluates Fast role swap request
- *
- * @param port Port index the function is performed for.
- * @param app_resp_handler Application handler callback function.
- *
- * @return None
+   @brief Patch version of the PMG1 CE.
  */
-void eval_fr_swap(cy_stc_pdstack_context_t * context, cy_pdstack_app_resp_cbk_t app_resp_handler);
+#define PMG1_CE_PATCH_VERSION                                (0)
 
-#endif /* _SWAP_H_ */
+/**
+   @brief Build number of the PMG1 CE. Base Build number: 0000
+          When the value reaches 9999 this shall be reset to 0.
+ */
+#define PMG1_CE_BUILD_NUMBER                                 (8)
 
-/* End of File */
+/**
+ *  @brief Composite PMG1 CE version value.
+ *
+ *  PMG1 CE version value. This is a 4 byte value with the following format:
+ *  Bytes 1-0: Build number
+ *  Byte    2: Patch version
+ *  Byte 3 (Bits 0:3): Minor Version
+ *  Byte 3 (Bits 4:7): Major Version
+ */
+#define PMG1_CE_BASE_VERSION                                             \
+        ((PMG1_CE_MAJOR_VERSION << 28) | (PMG1_CE_MINOR_VERSION << 24) |      \
+        (PMG1_CE_PATCH_VERSION << 16) | (PMG1_CE_BUILD_NUMBER))
 
+#endif /* _PMG1_VERSION_H_ */
+
+/* End of file */

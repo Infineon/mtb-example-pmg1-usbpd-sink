@@ -7,7 +7,20 @@
 #
 ################################################################################
 # \copyright
-# $ Copyright 2021 Cypress Semiconductor Apache2 $
+# Copyright 2021-2022, Cypress Semiconductor Corporation (an Infineon company)
+# SPDX-License-Identifier: Apache-2.0
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ################################################################################
 
 
@@ -15,10 +28,18 @@
 # Basic Configuration
 ################################################################################
 
+#Type of ModusToolbox Makefile Options include:
+#
+#COMBINED    -- Top Level Makefile usually for single standalone application
+#APPLICATION -- Top Level Makefile usually for multi project application
+#PROJECT     -- Project Makefile under Application
+#
+MTB_TYPE=COMBINED
+
 # Target board/hardware (BSP).
-# To change the target, it is recommended to use the Library manager
-# ('make modlibs' from command line), which will also update Eclipse IDE launch
-# configurations. If TARGET is manually edited, ensure TARGET_<BSP>.mtb with a
+# To change the target, it is recommended to use the Library manager 
+# ('make modlibs' from command line), which will also update Eclipse IDE launch 
+# configurations. If TARGET is manually edited, ensure TARGET_<BSP>.mtb with a 
 # valid URL exists in the application, run 'make getlibs' to fetch BSP contents
 # and update or regenerate launch configurations for your IDE.
 TARGET=PMG1-CY7110
@@ -83,7 +104,7 @@ INCLUDES=
 
 # Add additional defines to the build process (without a leading -D).
 # Enabled PD revision 3.0 support, VBus OV Fault Protection and Deep Sleep mode in idle states.
-DEFINES=CY_PD_SINK_ONLY=1 CY_PD_REV3_ENABLE=1 VBUS_OVP_ENABLE=1 VBUS_UVP_ENABLE=0 SYS_DEEPSLEEP_ENABLE=1
+DEFINES=CY_PD_SINK_ONLY=1 CY_PD_REV3_ENABLE=1 VBUS_OVP_ENABLE=1 VBUS_UVP_ENABLE=0 SYS_DEEPSLEEP_ENABLE=1 BATTERY_CHARGING_ENABLE=1
 
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=
@@ -121,8 +142,6 @@ PREBUILD=
 # Custom post-build commands to run.
 POSTBUILD=
 
-# Variable set to "PMG1" to enable support for the PMG1 parts and BSPs.
-export CY_SUPPORTED_KITS=PMG1
 
 ################################################################################
 # Paths

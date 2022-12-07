@@ -42,26 +42,7 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#include <cybsp.h>
-
-/* Restrict PD stack to sink operation. */
-#ifndef CY_PD_SINK_ONLY
-#define CY_PD_SINK_ONLY                         (1u)
-#endif /* CY_PD_SINK_ONLY */
-
-/* This application only supports devices with a single USB-C Port with Power Delivery Support. */
-#ifndef NO_OF_TYPEC_PORTS
-#if PMG1_PD_DUALPORT_ENABLE
-#define NO_OF_TYPEC_PORTS                       (2u)
-#else
-#define NO_OF_TYPEC_PORTS                       (1u)
-#endif /* PMG1_PD_DUALPORT_ENABLE */
-#endif /* NO_OF_TYPEC_PORTS */
-
-/* Enable PD spec Rev 3.x support */
-#ifndef CY_PD_REV3_ENABLE
-#define CY_PD_REV3_ENABLE                       (1u)
-#endif /* CY_PD_REV3_ENABLE */
+#include "cybsp.h"
 
 /* Use the default Source PDO selection algorithm. */
 #define PD_PDO_SEL_ALGO                         (0u)
@@ -84,12 +65,6 @@
 /* Period in ms for turning off VBus FET. */
 #define APP_VBUS_FET_OFF_TIMER_PERIOD           (1u)
 
-/** 100: Timer used for providing delay for VBUS FET ON. */
-#define APP_VBUS_FET_ON_TIMER                   (100u)
-
-/** 101: Timer used for providing delay for VBUS FET OFF. */
-#define APP_VBUS_FET_OFF_TIMER                  (101u)
-
 /*
  * The Analog-MUX bus input which is used to measure VBus voltage. Choose AMUXBUS_A on PMG1-S2 and AMUXBUS_B on
  * other devices.
@@ -99,9 +74,6 @@
 #else
 #define APP_VBUS_POLL_ADC_INPUT                 (CY_USBPD_ADC_INPUT_AMUX_B)
 #endif /* defined(CY_DEVICE_CCG3) */
-
-/* Enable legacy charger detect capability so that we can identify whether a DCP/CDP is getting connected. */
-#define  BATTERY_CHARGING_ENABLE                (1u)
 
 /*
  * Enable/Disable delay between fault retries for Type-C/PD faults.
@@ -139,9 +111,6 @@
  */
 #define RESET_ON_ERROR_ENABLE                   (0u)
 
-/* Watchdog reset timer id. */
-#define WATCHDOG_TIMER_ID                       (0xC2u)
-
 /*
  * Watchdog reset period in ms. This should be set to a value greater than
  * 500 ms to avoid significant increase in power consumption.
@@ -157,11 +126,6 @@
  */
 #define SNK_STANDBY_FET_SHUTDOWN_ENABLE         (1u)
 
-#ifndef SYS_DEEPSLEEP_ENABLE
-/* Enable PMG1 deep sleep to save power. */
-#define SYS_DEEPSLEEP_ENABLE                    (1u)
-#endif /* SYS_DEEPSLEEP_ENABLE */
-
 /*
  * Enable/Disable firmware active LED operation.
  *
@@ -174,7 +138,7 @@
  * Activity indicator LED timer. The timer is used to indicate that the firmware
  * is functional. The feature is controlled by APP_FW_LED_ENABLE.
  */
-#define LED_TIMER_ID                            (0xC0u)
+#define LED_TIMER_ID                            (CY_PDUTILS_TIMER_USER_START_ID)
 
 /*
  * The LED toggle period (ms) to be used when Type-C connection hasn't been detected.
