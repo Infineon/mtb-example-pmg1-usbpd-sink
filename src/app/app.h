@@ -8,7 +8,7 @@
 * Related Document: See README.md
 *
 *******************************************************************************
-* Copyright 2021-2022, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2021-2023, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -151,11 +151,12 @@ typedef struct
     uint8_t                             vdm_task_en;            /**< Flag to indicate is vdm task manager enabled. */
     uint8_t                             disc_cbl_pending;       /**< Flag to indicate is cable discovery is pending. */
     uint8_t                             cbl_disc_id_finished;   /**< Flag to indicate that cable disc id finished. */
-    uint8_t                             vdm_version;            /**< Live VDM version. */
+    uint8_t                             vdm_version;            /**< Live VDM major version. */
     uint8_t                             fault_status;           /**< Fault status bits for this port. */
     bool                                alt_mode_entered;       /**< Alternate modes currently entered. */
     cy_pdstack_vdm_resp_cbk_t           vdm_resp_cbk;           /**< VDM response handler callback. */
     mux_select_t                        curr_mux_state;         /**< Current data MUX state. */
+    uint8_t                             vdm_minor_version;      /**< Live VDM minor version. */
 } app_status_t;
 
 /*****************************************************************************
