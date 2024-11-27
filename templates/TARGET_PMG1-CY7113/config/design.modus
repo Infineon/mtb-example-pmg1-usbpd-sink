@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration app="BACKEND" formatVersion="13" lastSavedWith="Configurator Backend" lastSavedWithVersion="3.0.0" toolsPackage="ModusToolbox 3.0.0" xmlns="http://cypress.com/xsd/cydesignfile_v4">
+<Configuration app="BACKEND" formatVersion="13" lastSavedWith="Configurator Backend" lastSavedWithVersion="3.10.0" toolsPackage="ModusToolbox 3.1.0" xmlns="http://cypress.com/xsd/cydesignfile_v4">
     <Devices>
         <Device mpn="CYPM1311-48LQXI">
             <BlockConfig>
@@ -350,6 +350,16 @@
                         <Param id="startOnReset" value="true"/>
                     </Personality>
                 </Block>
+                <Block location="peri[0].div_8[4]">
+                    <Alias value="CLK_BCH"/>
+                    <Personality template="m0s8peripheralclock" version="1.0">
+                        <Param id="calc" value="man"/>
+                        <Param id="desFreq" value="48000000.000000"/>
+                        <Param id="intDivider" value="48"/>
+                        <Param id="fracDivider" value="0"/>
+                        <Param id="startOnReset" value="true"/>
+                    </Personality>
+                </Block>
                 <Block location="srss[0].clock[0]">
                     <Personality template="m0s8sysclocks" version="2.0"/>
                 </Block>
@@ -410,6 +420,31 @@
                 <Block location="usbpd[0]">
                     <Alias value="PD_PORT0"/>
                     <Personality template="m0s8usbpd" version="1.0">
+                        <Param id="BuckBoost" value="false"/>
+                        <Param id="CableResistance" value="0"/>
+                        <Param id="OutOffsetVolt" value="0"/>
+                        <Param id="OutVolt" value="20000"/>
+                        <Param id="CurrSenseResistor" value="5000"/>
+                        <Param id="NfetSrcDrvStrength" value="0"/>
+                        <Param id="TransitionUp" value="40"/>
+                        <Param id="TransitionDown" value="1"/>
+                        <Param id="BuckBoostOperatingMode" value="0"/>
+                        <Param id="PwmMode" value="4"/>
+                        <Param id="PwmFixedFrequency" value="400"/>
+                        <Param id="LS1GatePullUp" value="7"/>
+                        <Param id="LS2GatePullUp" value="7"/>
+                        <Param id="HS1GatePullUp" value="7"/>
+                        <Param id="HS2GatePullUp" value="7"/>
+                        <Param id="LS1GatePullDown" value="7"/>
+                        <Param id="LS2GatePullDown" value="7"/>
+                        <Param id="HS1GatePullDown" value="7"/>
+                        <Param id="HS2GatePullDown" value="7"/>
+                        <Param id="PwmDitheringType" value="3"/>
+                        <Param id="PwmDitheringRange" value="0"/>
+                        <Param id="PowerInductor" value="6800"/>
+                        <Param id="PeakCurrentSenseResistor" value="5000"/>
+                        <Param id="PeakCurrentLimit" value="30000"/>
+                        <Param id="BbClkFrequency" value="24"/>
                         <Param id="VbusOvp" value="true"/>
                         <Param id="OvpMode" value="2"/>
                         <Param id="OvpThresh" value="20"/>
@@ -441,8 +476,37 @@
                         <Param id="CcOvpRetry" value="2"/>
                         <Param id="SbuOvp" value="false"/>
                         <Param id="SbuOvpRetry" value="2"/>
-                        <Param id="Bch" value="false"/>
-                        <Param id="SinkSel" value="1"/>
+                        <Param id="Bch" value="true"/>
+                        <Param id="SinkSel" value="3"/>
+                        <Param id="SourceSel" value="1"/>
+                        <Param id="AppSrcId" value="2"/>
+                        <Param id="QCEnable" value="1"/>
+                        <Param id="QCType" value="0"/>
+                        <Param id="AFCEnable" value="0"/>
+                        <Param id="AFCSrcCnt" value="1"/>
+                        <Param id="AFCVol0" value="0"/>
+                        <Param id="AFCCur0" value="0"/>
+                        <Param id="AFCVol1" value="0"/>
+                        <Param id="AFCCur1" value="0"/>
+                        <Param id="AFCVol2" value="0"/>
+                        <Param id="AFCCur2" value="0"/>
+                        <Param id="AFCVol3" value="0"/>
+                        <Param id="AFCCur3" value="0"/>
+                        <Param id="Bch1" value="false"/>
+                        <Param id="SourceSel1" value="1"/>
+                        <Param id="App1SrcId" value="2"/>
+                        <Param id="QC1Enable" value="0"/>
+                        <Param id="QC1Type" value="0"/>
+                        <Param id="AFC1Enable" value="0"/>
+                        <Param id="AFC1SrcCnt" value="1"/>
+                        <Param id="AFC1Vol0" value="0"/>
+                        <Param id="AFC1Cur0" value="0"/>
+                        <Param id="AFC1Vol1" value="0"/>
+                        <Param id="AFC1Cur1" value="0"/>
+                        <Param id="AFC1Vol2" value="0"/>
+                        <Param id="AFC1Cur2" value="0"/>
+                        <Param id="AFC1Vol3" value="0"/>
+                        <Param id="AFC1Cur3" value="0"/>
                         <Param id="inFlash" value="true"/>
                     </Personality>
                 </Block>
@@ -483,6 +547,10 @@
                 <Net>
                     <Port name="peri[0].div_8[3].clk[0]"/>
                     <Port name="usbpd[0].clock_filter1[0]"/>
+                </Net>
+                <Net>
+                    <Port name="peri[0].div_8[4].clk[0]"/>
+                    <Port name="usbpd[0].clock_bch_det[0]"/>
                 </Net>
                 <Mux name="sense" location="csd[0].csd[0]">
                     <Arm>

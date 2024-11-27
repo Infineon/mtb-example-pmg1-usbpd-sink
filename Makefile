@@ -7,7 +7,7 @@
 #
 ################################################################################
 # \copyright
-# Copyright 2021-2023, Cypress Semiconductor Corporation (an Infineon company)
+# Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company)
 # SPDX-License-Identifier: Apache-2.0
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,7 +70,7 @@ TOOLCHAIN=GCC_ARM
 CONFIG=Debug
 
 # If set to "true" or "1", display full command-lines when building.
-VERBOSE=
+VERBOSE=true
 
 
 ################################################################################
@@ -104,8 +104,23 @@ INCLUDES=
 
 # Add additional defines to the build process (without a leading -D).
 # Enabled PD revision 3.0 support, VBus OV Fault Protection and Deep Sleep mode in idle states.
-DEFINES=CY_PD_SINK_ONLY=1 CY_PD_REV3_ENABLE=1 VBUS_OVP_ENABLE=1 VBUS_UVP_ENABLE=0 SYS_DEEPSLEEP_ENABLE=1 BATTERY_CHARGING_ENABLE=1
+DEFINES=CY_PD_SINK_ONLY=1 CY_PD_REV3_ENABLE=1 VBUS_OVP_ENABLE=1 VBUS_UVP_ENABLE=0 SYS_DEEPSLEEP_ENABLE=1 BATTERY_CHARGING_ENABLE=1 \
+        MINOR_SVDM_VER_SUPPORT=1 CY_APP_ROLE_PREFERENCE_ENABLE=0 CY_APP_POWER_ROLE_PREFERENCE_ENABLE=0 \
+        LEGACY_PD_PARALLEL_OPER=1 APPLE_SINK_DISABLE=0
 
+ifeq ($(TARGET), APP_PMG1-CY7110)
+    DEFINES+=PMG1_FLIPPED_FET_CTRL=1 CY_APP_VBUS_C_FET_CTRL=1
+endif
+
+ifeq ($(TARGET), APP_EVAL_PMG1_S3_DUALDRP)
+    DEFINES+=CY_APP_SINK_FET_CTRL_GPIO_EN=1
+endif
+
+ifneq (,$(filter APP_PMG1-CY7110 APP_PMG1-CY7113 APP_EVAL_PMG1_S3_DUALDRP, $(TARGET)))
+    DEFINES+=QC_AFC_CHARGING_DISABLED=0 QC_AFC_SNK_EN=1
+else
+    DEFINES+=QC_AFC_CHARGING_DISABLED=1 QC_AFC_SNK_EN=0
+endif
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=
 
