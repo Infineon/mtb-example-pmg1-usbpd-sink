@@ -7,8 +7,8 @@
 #
 ################################################################################
 # \copyright
-# Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company)
-# SPDX-License-Identifier: Apache-2.0
+# (c) 2021-2026, Infineon Technologies AG, or an affiliate of Infineon
+# Technologies AG.  SPDX-License-Identifier: Apache-2.0
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ TOOLCHAIN=GCC_ARM
 CONFIG=Debug
 
 # If set to "true" or "1", display full command-lines when building.
-VERBOSE=true
+VERBOSE=
 
 
 ################################################################################
